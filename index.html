@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLIME</title>
+<style>
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #e0f7fa, #e0f2f1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 15px;
+  color: #333;
+}
+h1 {
+  margin-bottom: 25px;
+  font-size: 2.8em;
+  color: #006064;
+  letter-spacing: 3px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+  text-align: center;
+}
+.selected-slime {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  border: 3px solid #004d40;
+  margin-bottom: 20px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.selected-slime.animate { transform: scale(1.2); }
+.card {
+  background: white;
+  border-radius: 25px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  padding: 30px;
+  width: 100%;
+  max-width: 380px;
+  margin-bottom: 30px;
+  transition: transform 0.3s;
+}
+.card:hover { transform: translateY(-5px); }
+label { display: block; margin-top: 15px; font-weight: bold; }
+input[type="text"], input[type="number"] {
+  margin-top: 8px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+input:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 0 10px rgba(0,150,136,0.3);
+  outline: none;
+  border-color: #009688;
+}
+button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 15px;
+  border: none;
+  background: linear-gradient(45deg, #00bcd4, #009688);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+button:hover { transform: scale(1.05); box-shadow: 0 6px 15px rgba(0,0,0,0.2); }
+.colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.color-btn {
+  width: 45px; height: 45px;
+  border-radius: 50%;
+  border: 3px solid #ccc;
+  cursor: pointer;
+  transition: transform 0.2s, border 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+.color-btn.selected {
+  border: 3px solid #004d40;
+  transform: scale(1.2);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.total { margin-top: 25px; font-size: 20px; font-weight: bold; color: #00796b; text-align: right; transition: all 0.4s ease; }
+.orders { width: 100%; max-width: 380px; }
+.order-card {
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  padding: 12px 18px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.4s ease;
+}
+.order-card.show { opacity: 1; transform: translateY(0); }
+.order-info { flex: 1 1 200px; min-width: 150px; }
+.order-info p { margin: 3px 0; }
+.order-color {
+  width: 35px; height: 35px;
+  border-radius: 50%;
+  border: 2px solid #004d40;
+  margin: 0 10px;
+  flex-shrink: 0;
+}
+.delete-btn {
+  margin-left: 10px;
+  padding: 4px 8px;
+  font-size: 13px;
+  border-radius: 10px;
+  border: none;
+  background-color: #e53935;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.delete-btn:hover { background-color: #b71c1c; transform: scale(1.05); }
+@media (max-width: 400px) {
+  h1 { font-size: 2.2em; }
+  .selected-slime { width: 50px; height: 50px; }
+  .card, .orders { padding: 20px; width: 95%; }
+  .color-btn { width: 40px; height: 40px; }
+  .order-color { width: 30px; height: 30px; }
+  .total { font-size: 18px; }
+  button { padding: 12px; font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<h1>SLIME</h1>
+<div class="selected-slime" id="slimePreview"></div>
+
+<div class="card">
+  <label>이름</label>
+  <input type="text" id="customerName" placeholder="이름을 입력하세요">
+  <label>색상</label>
+  <div class="colors" id="colorContainer"></div>
+  <label>수량</label>
+  <input type="number" id="slimeQty" min="1" value="1">
+  <label>토핑 (500원)</label>
+  <input type="number" id="toppingQty" min="0" value="0">
+  <div class="total" id="total">총합: 1500원</div>
+  <button onclick="saveOrder()">💾 주문 저장</button>
+</div>
+
+<div class="orders">
+  <h2>주문 내역</h2>
+  <div id="orderList">저장된 주문이 없습니다.</div>
+  <div class="total" id="totalEarned">총 번 돈: 0원</div>
+</div>
+
+<script>
+const SLIME_PRICE = 1500;
+const TOPPING_PRICE = 500;
+const colors = ["빨강","#f44336","주황","#fb923c","노랑","#facc15","초록","#4ade80","파랑","#3b82f6","보라","#a78bfa","검정","#111827","흰색","#f9fafb"];
+let selectedColor = "";
+
+const colorContainer = document.getElementById("colorContainer");
+const slimePreview = document.getElementById("slimePreview");
+
+for (let i=0; i<colors.length; i+=2) {
+  const btn = document.createElement("div");
+  btn.className = "color-btn";
+  btn.style.backgroundColor = colors[i+1];
+  btn.title = colors[i];
+  btn.onclick = function() {
+    document.querySelectorAll(".color-btn").forEach(c=>c.classList.remove("selected"));
+    btn.classList.add("selected");
+    selectedColor = colors[i];
+    slimePreview.style.backgroundColor = colors[i+1];
+    slimePreview.classList.add("animate");
+    setTimeout(()=>slimePreview.classList.remove("animate"), 300);
+    updateTotal();
+  }
+  colorContainer.appendChild(btn);
+}
+
+function updateTotal() {
+  const qty = parseInt(document.getElementById("slimeQty").value) || 0;
+  const topping = parseInt(document.getElementById("toppingQty").value) || 0;
+  const total = SLIME_PRICE*qty + TOPPING_PRICE*topping;
+  document.getElementById("total").textContent = `총합: ${total.toLocaleString()}원`;
+  return total;
+}
+
+document.getElementById("slimeQty").addEventListener("input", updateTotal);
+document.getElementById("toppingQty").addEventListener("input", updateTotal);
+
+function saveOrder() {
+  const name = document.getElementById("customerName").value || "이름 없음";
+  const qty = parseInt(document.getElementById("slimeQty").value) || 0;
+  const topping = parseInt(document.getElementById("toppingQty").value) || 0;
+  if(!selectedColor){ alert("색상을 선택해주세요!"); return; }
+  const total = SLIME_PRICE*qty + TOPPING_PRICE*topping;
+  const order = {name,color:selectedColor,qty,topping,total,date:new Date().toLocaleString()};
+  const orders = JSON.parse(localStorage.getItem("orders")) || [];
+  orders.push(order);
+  localStorage.setItem("orders",JSON.stringify(orders));
+  loadOrders(true);
+  updateTotalEarned();
+  alert(`${name}님의 주문이 저장되었습니다!`);
+}
+
+function loadOrders(animate=false){
+  const orders = JSON.parse(localStorage.getItem("orders")) || [];
+  const container = document.getElementById("orderList");
+  if(orders.length===0){ container.textContent="저장된 주문이 없습니다."; return; }
+  container.innerHTML="";
+  orders.forEach((o,index)=>{
+    const div=document.createElement("div");
+    div.className="order-card";
+    if(animate){ setTimeout(()=>div.classList.add("show"),10); } else { div.classList.add("show"); }
+
+    const info=document.createElement("div");
+    info.className="order-info";
+    info.innerHTML=`<p>이름: ${o.name}</p>
+                    <p>수량: ${o.qty}, 토핑: ${o.topping}</p>
+                    <p>총합: ${o.total.toLocaleString()}원</p>
+                    <p class="text-xs">${o.date}</p>`;
+
+    const colorDot=document.createElement("div");
+    colorDot.className="order-color";
+    const colorIndex=colors.indexOf(o.color);
+    colorDot.style.backgroundColor=colors[colorIndex+1]||"#ccc";
+
+    const delBtn=document.createElement("button");
+    delBtn.className="delete-btn";
+    delBtn.textContent="삭제";
+    delBtn.onclick=()=>deleteOrder(index);
+
+    div.appendChild(info);
+    div.appendChild(colorDot);
+    div.appendChild(delBtn);
+    container.appendChild(div);
+  });
+}
+
+function deleteOrder(index){
+  const orders=JSON.parse(localStorage.getItem("orders"))||[];
+  if(confirm("이 주문을 삭제하시겠습니까?")){
+    const card = document.querySelectorAll(".order-card")[index];
+    card.style.opacity=0;
+    card.style.transform="translateY(20px)";
+    setTimeout(()=>{
+      orders.splice(index,1);
+      localStorage.setItem("orders",JSON.stringify(orders));
+      loadOrders();
+      updateTotalEarned();
+    },400);
+  }
+}
+
+function updateTotalEarned(){
+  const orders=JSON.parse(localStorage.getItem("orders"))||[];
+  const sum=orders.reduce((acc,o)=>acc+o.total,0);
+  document.getElementById("totalEarned").textContent=`합계: ${sum.toLocaleString()}원`;
+}
+
+loadOrders();
+updateTotalEarned();
+updateTotal();
+</script>
+</body>
+</html>
